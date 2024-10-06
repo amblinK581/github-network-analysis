@@ -50,12 +50,6 @@ Conclusion
 
 Our analysis provides key insights into the collaboration dynamics within GitHub’s open-source ecosystem. By understanding the social and behavioral factors that drive connections, platform developers can enhance recommendation algorithms and create initiatives that foster more diverse collaborations.
 
-How to Use This Repository
-
-	1.	Data: The data/ folder contains the preprocessed network dataset of GitHub developers.
-	2.	Scripts: The scripts/ folder includes R code for performing social network analysis and ERGM modeling.
-	3.	Results: The results/ folder contains visualizations and analysis results from the network analysis.
-	4.	Report: The final project report is available in the docs/ folder.
 
 Requirements
 
