@@ -1,0 +1,182 @@
+---
+title: "Github_SNA"
+output: html_document
+date: "2024-04-03"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+library(igraph)
+library(readr)
+
+# Set wd
+setwd('/Users/amber/Documents/Stevens Institute of Tech/Curriculum/2024 Spring/BIA 658-B/Course project/git_web_ml')
+
+# Load data
+nodes <- read_csv("musae_git_target.csv")
+edges <- read_csv("musae_git_edges.csv")
+
+# Create a graph object
+Github_g <- graph_from_data_frame(d = edges, vertices = nodes, directed = FALSE)
+
+print(Github_g)
+
+
+#CHECKING THE PROPORTION OF WEB DEVELOPERS AND ML DEVELOPERS
+ml_target <- V(Github_g)$ml_target
+
+# Count the number of nodes for each ml_target value
+node_counts <- table(ml_target)
+
+# Print the counts
+print(node_counts) #74% web and 26% ML
+
+#FILTERING ON THE BASIS OF DEGREE CENTRALITY
+
+degree_centrality <- igraph::degree(Github_g)
+
+summary(degree_centrality) 
+hist(degree_centrality, breaks = 20, main = "Degree Centrality Distribution", xlab = "Degree Centrality")
+
+# Set a threshold for degree centrality (Using 30)
+threshold <- 30  # Change this threshold as desired
+
+# Identify nodes with degree centrality above the threshold
+high_degree_nodes <- which(degree_centrality > threshold)
+
+# Subset the graph data to include only nodes with high degree centrality
+subgraph_data <- induced_subgraph(Github_g, high_degree_nodes)
+
+#CHECKING THE PROPORTION OF WEB DEVELOPERS AND ML DEVELOPERS FOR THE FILTERED DATASET
+ml_targetf <- V(subgraph_data)$ml_target
+
+# Count the number of nodes for each ml_target value
+node_countsf <- table(ml_targetf)
+
+# Print the counts
+print(node_countsf) #88% web and 12% ML
+
+
+# Create a color vector based on the ml_target attribute
+vertex_colors <- ifelse(V(subgraph_data)$ml_target == 1, "red", "blue")
+
+# Plot the graph with the specified layout and vertex colors
+plot(subgraph_data, layout=layout.fruchterman.reingold, vertex.size=2, vertex.label=NA, vertex.color=vertex_colors)
+
+----------------------------------------------
+
+
+----------------------------------------------
+# ERGM Analysis
+
+# Step 1: Install and Load Required Packages
+install.packages("ergm")
+install.packages("network")
+library(ergm)
+library(network)
+
+install.packages("intergraph")
+library(intergraph)
+
+
+# Step 2: Prepare the Network Data
+# Convert igraph object to network object
+sub_net <- asNetwork(subgraph_data)
+
+
+# Step 3: Define the ERGM
+
+# Edges
+ergm_m1 <- ergm(sub_net ~ edges, control = control.ergm(seed=1))
+summary(ergm_m1)
+
+# Node Factor
+ergm_m2 <- ergm(sub_net ~ edges + nodefactor("ml_target"), control = control.ergm(seed=1))
+summary(ergm_m2)
+
+# Homophily
+ergm_m3 <- ergm(sub_net ~ edges + nodematch("ml_target", diff=FALSE), control = control.ergm(seed=1))
+summary(ergm_m3)
+
+---------------------------------------------------------------------------------------
+# Transitivity
+ergm_m4 <- ergm(sub_net ~ edges + gwesp(0.5, fixed = TRUE), control = control.ergm(seed=1))
+summary(ergm_m4)
+
+
+ergm_m4.1 <- ergm(sub_net ~ edges + triangle, control = control.ergm(seed=1))
+summary(ergm_m4.1)
+
+# Degree
+ergm_m5 <- ergm(sub_net ~ edges + gwdegree(decay=0.5, fixed=TRUE), control = control.ergm(seed=1))
+summary(ergm_m5)
+
+#ergm_m6 <- ergm(sub_net ~ edges + degree(1), control = control.ergm(seed=1))
+#summary(ergm_m6)
+---------------------------------------------------------------------------------------
+
+# Combine (edges + nodefactor + nodematch)
+ergm_m7 <- ergm(sub_net ~ edges + nodefactor("ml_target") + nodematch("ml_target", diff=FALSE), control = control.ergm(seed=1))
+summary(ergm_m7)
+
+# Goodness of fit
+gof <- gof(ergm_m7)
+
+print(gof)
+
+plot(gof) 
+
+
+# nodecove / edgecov => notapplicable
+# mutual(=reciprocity) => notapplicable
+# triangle or gwesp(0.5, fixed = TRUE) (=transitivity) 
+# nodefactor
+# nodemix
+
+# nodematch(=Homophily effects)
+
+# help('ergm-terms')
+
+
+# Step 4: Fit the Model / check the summary of the model
+summary(ergm_m1)
+
+# Step 5: Evaluate the Model Fit
+# Goodness-of-fit assessment
+gof_m1 <- gof(ergm_m1)
+print(gof_m1)
+
+plot(gof_m1)
+
+
+# Step 6: Interpret the Results
+# Step 7: Diagnostics and Model Checking
+# Step 8: Predictions and Simulations
+
+
+
+
+
